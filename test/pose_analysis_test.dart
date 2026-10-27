@@ -4,6 +4,24 @@ import 'package:badminton_ai_coach/pose_analysis.dart';
 import 'pose_fixture.dart';
 
 void main() {
+  test('sustained post-swing trunk lean produces reviewable balance advice', () {
+    final input = poseFixture();
+    for (final frame in input['frames'] as List) {
+      if ((frame['t'] as int) >= 2250) {
+        for (final point in frame['points'] as List) {
+          if ((point[0] as int) < 23) {
+            point[1] = (point[1] as double) + .20;
+          }
+        }
+      }
+    }
+    final report = analyzePoses(input, hand: '右手');
+    expect(report.swings, hasLength(1));
+    expect(report.drillIds, contains('balance'));
+    expect(report.swings.single.afterLean, greaterThan(25));
+    expect(report.swings.single.hints.firstWhere((h) => h.id == 'after_lean').time,
+        greaterThan(report.swings.single.peak));
+  });
   test(
     'angles account for video aspect ratio and reject zero-length limbs',
     () {

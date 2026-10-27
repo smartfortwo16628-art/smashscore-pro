@@ -318,6 +318,7 @@ class _VideoState extends State<VideoScreen> with WidgetsBindingObserver {
           return const Center(child: CircularProgressIndicator());
         }
         return ListView(
+          key: const Key('video-ready'),
           padding: const EdgeInsets.all(16),
           children: [
             ClipRRect(

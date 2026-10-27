@@ -87,8 +87,16 @@ void main() {
       await tester.tap(find.text('影片及標記'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('合成測試影片'));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('逐格／截圖及畫線'));
+      for (var attempt = 0; attempt < 100; attempt++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        if (find.byKey(const Key('video-ready')).evaluate().isNotEmpty) {
+          break;
+        }
+      }
+      expect(find.byKey(const Key('video-ready')), findsOneWidget,
+        reason: tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').join('\n'));
+      await tester.scrollUntilVisible(find.text('逐格／截圖及畫線'), 200,
+        scrollable: find.descendant(of: find.byType(VideoScreen), matching: find.byType(Scrollable)).first);
       await tester.tap(find.text('逐格／截圖及畫線'));
       await tester.pumpAndSettle();
       final canvas = find.byKey(const Key('annotation-canvas'));
@@ -200,7 +208,8 @@ void main() {
       );
       expect(find.text('今次未有足夠依據'), findsOneWidget);
       expect(await store.latestPoseReport('pose-video'), isNotNull);
-      await tester.ensureVisible(find.text('查看骨架及影格'));
+      await tester.scrollUntilVisible(find.text('查看骨架及影格'), 200,
+        scrollable: find.descendant(of: find.byType(PoseAnalysisScreen), matching: find.byType(Scrollable)).first);
       await tester.tap(find.text('查看骨架及影格'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('pose-overlay')), findsOneWidget);

@@ -15,7 +15,7 @@ assert "package: name='hk.badminton.coach'" in badging
 assert "sdkVersion:'28'" in badging
 assert "targetSdkVersion:'35'" in badging
 assert 'application-debuggable' not in badging
-for denied in ('INTERNET', 'ACCESS_NETWORK_STATE', 'CAMERA', 'RECORD_AUDIO', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE', 'MANAGE_EXTERNAL_STORAGE', 'READ_MEDIA_VIDEO'):
+for denied in ('INTERNET', 'ACCESS_NETWORK_STATE', 'RECEIVE_BOOT_COMPLETED', 'FOREGROUND_SERVICE', 'CAMERA', 'RECORD_AUDIO', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE', 'MANAGE_EXTERNAL_STORAGE', 'READ_MEDIA_VIDEO'):
     assert f"android.permission.{denied}" not in badging, denied
 signature = run(build_tools / 'apksigner', 'verify', '--verbose', '--print-certs', apk)
 report = badging + '\n' + signature + '\nSHA256: ' + hashlib.sha256(apk.read_bytes()).hexdigest() + '\n'
