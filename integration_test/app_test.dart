@@ -211,7 +211,12 @@ void main() {
       await tester.scrollUntilVisible(find.text('查看骨架及影格'), 200,
         scrollable: find.descendant(of: find.byType(PoseAnalysisScreen), matching: find.byType(Scrollable)).first);
       await tester.tap(find.text('查看骨架及影格'));
-      await tester.pumpAndSettle();
+      for (var attempt = 0; attempt < 100; attempt++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        if (find.byKey(const Key('pose-overlay')).evaluate().isNotEmpty) {
+          break;
+        }
+      }
       expect(find.byKey(const Key('pose-overlay')), findsOneWidget);
       debugPrint('CHECK: deletion cleanup');
       await store.deleteStudent(sid);
