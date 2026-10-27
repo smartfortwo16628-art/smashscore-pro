@@ -26,6 +26,7 @@ class MainActivity : FlutterActivity() {
     private var exportSource: File? = null
     private val timelines = LinkedHashMap<String, List<Long>>()
     private var disposed = false
+    private val poseEngine = PoseEngine()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +35,34 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        val poseChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "hk.badminton.coach/pose")
+        poseChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "analyze" -> {
+                    val job = call.argument<String>("job")
+                    if (job.isNullOrBlank() || !poseEngine.begin(job)) {
+                        result.error("busy", "已有分析進行中，請稍候再試。", null)
+                    } else {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        background(result) {
+                            try {
+                                val file = privateFile(call.argument<String>("path"))
+                                poseEngine.analyze(file, timeline(file)) { progress ->
+                                    runOnUiThread {
+                                        if (!disposed) poseChannel.invokeMethod("progress", progress + ("job" to job))
+                                    }
+                                }
+                            } finally {
+                                poseEngine.finish(job)
+                                runOnUiThread { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+                            }
+                        }
+                    }
+                }
+                "cancel" -> { poseEngine.cancel(call.argument<String>("job")); result.success(null) }
+                else -> result.notImplemented()
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "hk.badminton.coach/media")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -215,8 +244,15 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onStop() {
+        // Never silently continue processing a child's video in the background.
+        poseEngine.cancel(null)
+        super.onStop()
+    }
+
     override fun onDestroy() {
         disposed = true
+        poseEngine.cancel(null)
         pickerResult?.error("closed", "頁面已關閉，請重新選擇檔案", null)
         pickerResult = null
         worker.shutdown()

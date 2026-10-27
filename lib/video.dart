@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import 'main.dart';
 import 'screens.dart';
 import 'store.dart';
+import 'pose_screen.dart';
 
 class MediaBridge {
   static const channel = MethodChannel('hk.badminton.coach/media');
@@ -106,15 +107,12 @@ class _VideosState extends State<VideosScreen> {
         return;
       }
       final path = media['path'] as String;
+      final video = <String, Object?>{
+        'id': newId(), 'student_id': studentId, 'title': media['name'] as String,
+        'path': path, 'duration_ms': media['duration'] as int, 'created': now(),
+      };
       try {
-        await store.addVideo({
-          'id': newId(),
-          'student_id': studentId,
-          'title': media['name'] as String,
-          'path': path,
-          'duration_ms': media['duration'] as int,
-          'created': now(),
-        });
+        await store.addVideo(video);
       } catch (_) {
         try {
           await File(path).delete();
@@ -124,7 +122,8 @@ class _VideosState extends State<VideosScreen> {
         rethrow;
       }
       if (mounted) {
-        message(context, '影片已複製到本機私人儲存。');
+        await Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => PoseAnalysisScreen(video, autoStart: true)));
       }
     } catch (e) {
       if (mounted) {
@@ -147,20 +146,20 @@ class _VideosState extends State<VideosScreen> {
           child: FilledButton.icon(
             onPressed: busy ? null : importLocalVideo,
             icon: const Icon(Icons.video_file_outlined),
-            label: Text(busy ? '正在匯入…' : '匯入手機影片'),
+            label: Text(busy ? '正在處理影片…' : '匯入影片並自動分析'),
           ),
         ),
       ),
       const Padding(
         padding: EdgeInsets.symmetric(horizontal: 20),
-        child: Text('每段最多 3 分鐘／300 MiB；影片只存喺呢部手機。'),
+        child: Text('正手高遠球：固定鏡頭拍單一學員，全身入鏡。每段最多 3 分鐘／300 MiB；影片同分析只存喺呢部手機。'),
       ),
       Expanded(
         child: QueryList(
           future: StoreScope.of(c).videos(studentId: widget.studentId),
           builder: (rows) => rows.isEmpty
               ? const Center(
-                  child: EmptyPanel('逐段睇，逐點改善', '匯入全身清晰入鏡嘅影片，慢放、逐格觀察，再記錄教練評估。'),
+                  child: EmptyPanel('匯入影片，自動睇動作', '本機辨識人體姿態、標示觀察時間，再配對改善練習；亦可慢放及手動畫線。'),
                 )
               : ListView(
                   padding: const EdgeInsets.all(16),
@@ -194,7 +193,8 @@ class _VideosState extends State<VideosScreen> {
 
 class VideoScreen extends StatefulWidget {
   final DbRow video;
-  const VideoScreen(this.video, {super.key});
+  final int initialPosition;
+  const VideoScreen(this.video, {super.key, this.initialPosition = 0});
   @override
   State<VideoScreen> createState() => _VideoState();
 }
@@ -203,7 +203,13 @@ class _VideoState extends State<VideoScreen> with WidgetsBindingObserver {
   late final VideoPlayerController controller = VideoPlayerController.file(
     File(widget.video['path'] as String),
   );
-  late final Future<void> ready = controller.initialize();
+  late final Future<void> ready = initialize();
+  Future<void> initialize() async {
+    await controller.initialize();
+    if (mounted && widget.initialPosition > 0) {
+      await controller.seekTo(Duration(milliseconds: widget.initialPosition));
+    }
+  }
   double speed = 1;
   bool operation = false;
   @override
@@ -273,7 +279,7 @@ class _VideoState extends State<VideoScreen> with WidgetsBindingObserver {
                   final yes = await confirm(
                     c,
                     '刪除影片？',
-                    '影片及其標記截圖會從 App 刪除。既有教練評估及練習紀錄會保留。',
+                    '影片、骨架分析及標記截圖會從 App 刪除。既有教練評估及練習紀錄會保留。',
                   );
                   if (yes &&
                       c.mounted &&
@@ -383,6 +389,14 @@ class _VideoState extends State<VideoScreen> with WidgetsBindingObserver {
                   .toList(),
             ),
             const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: operation ? null : () => perform(c, () async {
+                await controller.pause();
+                if (c.mounted) go(c, PoseAnalysisScreen(widget.video));
+              }),
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('自動分析／查看報告'),
+            ),
             FilledButton.icon(
               onPressed: operation ? null : review,
               icon: const Icon(Icons.draw_outlined),

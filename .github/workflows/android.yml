@@ -1,4 +1,4 @@
-name: Android V1 APK
+name: Android AI APK
 on:
   pull_request:
   workflow_dispatch:
@@ -29,17 +29,22 @@ jobs:
       - name: Android SDK
         run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;27.0.12077973'
       - name: Resolve, analyse, test and build
-        run: bash scripts/build_apk.sh
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y ffmpeg
+          fi
+          bash scripts/build_apk.sh
       - name: Package APK
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/Badminton_AI_Coach_V1.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dist/Badminton_AI_Coach_AI.apk
           cp build/apk-verification.txt dist/
           cp pubspec.lock dist/
-          sha256sum dist/Badminton_AI_Coach_V1.apk > dist/SHA256SUMS.txt
+          sha256sum dist/Badminton_AI_Coach_AI.apk > dist/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Badminton-AI-Coach-V1-APK
+          name: Badminton-AI-Coach-AI-APK
           path: dist/
           retention-days: 7
           if-no-files-found: error
@@ -56,7 +61,7 @@ jobs:
           target: default
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -feature -Vulkan
-          script: flutter test integration_test/app_test.dart -d emulator-5554 --reporter expanded
+          script: bash scripts/emulator_test.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:

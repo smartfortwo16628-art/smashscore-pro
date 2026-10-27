@@ -138,7 +138,7 @@ class _ConsentState extends State<ConsentScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            '• 學員資料、影片同訓練紀錄只儲存喺呢部手機。\n• 建議用學員暱稱，毋須真名、生日或聯絡資料。\n• 沒有登入、廣告、付費服務或雲端備份。\n• 移除 App 會清除本機資料；匯出圖片後由你自行保管。\n• 本版採用人工觀察及練習配對，未提供自動 AI 技術評分。',
+            '• 學員資料、影片同訓練紀錄只儲存喺呢部手機。\n• 建議用學員暱稱，毋須真名、生日或聯絡資料。\n• 沒有登入、廣告、付費服務或雲端備份。\n• 移除 App 會清除本機資料；匯出圖片後由你自行保管。\n• 內置本機姿態辨識及實驗性動作提示；唔係專業教練確診或技術分數。',
           ),
           const SizedBox(height: 20),
           CheckboxListTile(
@@ -246,12 +246,12 @@ class Dashboard extends StatelessWidget {
             ),
             SizedBox(height: 12),
             Text(
-              '由正手高遠球開始\n觀察 → 選擇練習 → 記錄改善',
+              '由正手高遠球開始\n匯入影片 → 自動分析 → 記錄改善',
               style: TextStyle(color: Colors.white, fontSize: 16),
             ),
             SizedBox(height: 12),
             Chip(
-              label: Text('全離線・人工觀察 V1'),
+              label: Text('全離線・自動動作分析'),
               avatar: Icon(Icons.offline_bolt, size: 18),
             ),
           ],
@@ -369,14 +369,16 @@ class HelpScreen extends StatelessWidget {
           '拍攝建議：固定手機，光線足夠，全身連雙腳入鏡。匯入上限 3 分鐘／300 MiB；MP4 H.264 通常較易播放。逐格功能只會在原生解碼器能提供可靠影格索引時啟用。',
         ),
         SizedBox(height: 20),
-        const Text('Badminton AI Coach 1.1.0\nML Kit 與雲端功能尚未啟用。'),
+        const Text('ML Kit 為 Google 專有裝置端 SDK，並非全開源；本版不需要付費 API。條款：https://developers.google.com/ml-kit/terms\n隱私說明：https://developers.google.com/ml-kit/terms/data-usage'),
+        SizedBox(height: 12),
+        const Text('Badminton AI Coach 1.2.0\nML Kit 人體姿態已啟用，模型隨 App 安裝；動作提示仍屬實驗性。沒有 GPT 或雲端服務。'),
         TextButton(
           onPressed: () => showLicensePage(
             context: c,
             applicationName: 'Badminton AI Coach',
-            applicationVersion: '1.1.0',
+            applicationVersion: '1.2.0',
           ),
-          child: const Text('開源授權'),
+          child: const Text('Flutter 及開源套件授權'),
         ),
       ],
     ),
@@ -818,7 +820,7 @@ class PlansScreen extends StatelessWidget {
     future: StoreScope.of(c).plans(studentId: studentId),
     builder: (rows) => rows.isEmpty
         ? const Center(
-            child: EmptyPanel('先觀察，再練習', '喺學員檔案新增評估，選擇想改善嘅問題，就會配對最多 3 項練習。'),
+            child: EmptyPanel('先觀察，再練習', '匯入影片自動分析後加入建議練習，或者喺學員檔案新增教練評估。'),
           )
         : ListView(
             padding: const EdgeInsets.all(16),

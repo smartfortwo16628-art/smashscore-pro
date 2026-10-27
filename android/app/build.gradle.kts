@@ -27,3 +27,7 @@ android {
     }
 }
 flutter { source = "../.." }
+dependencies {
+    // Bundled model: no Play Services model download, account, API key or network required.
+    implementation("com.google.mlkit:pose-detection:18.0.0-beta5")
+}

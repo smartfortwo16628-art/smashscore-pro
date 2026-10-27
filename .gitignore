@@ -11,3 +11,6 @@ android/key.properties
 *.apk
 *.aab
 __pycache__/
+
+# Reproducible upstream inference fixture, generated before analysis/tests.
+integration_test/pose_clip.dart

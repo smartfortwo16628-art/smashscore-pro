@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:badminton_ai_coach/store.dart';
+import 'package:badminton_ai_coach/pose_analysis.dart';
+import 'pose_fixture.dart';
 
 void main() {
   late CoachStore store;
@@ -130,4 +132,42 @@ void main() {
     expect(await store.plans(), isEmpty);
     expect(await store.practices(id), isEmpty);
   });
+  test('AI report persists, plan creation is idempotent, deletion clears body data', () async {
+    final video=File('${dir.path}/pose.mp4'); await video.writeAsBytes([1]);
+    await store.addVideo({'id':'pose-v','student_id':'s','title':'分析測試',
+      'path':video.path,'duration_ms':5125,'created':now()});
+    final report=analyzePoses(poseFixture(),hand:'右手');
+    final row=await store.savePoseReport('pose-v',report);
+    final id=await store.createPosePlan(row['id'] as String);
+    expect(await store.createPosePlan(row['id'] as String),id);
+    expect(await store.plans(),hasLength(1));
+    await store.close();
+    store=await CoachStore.open(factory:databaseFactoryFfi,path:'${dir.path}/test.db');
+    expect((await store.latestPoseReport('pose-v'))!['plan_id'],id);
+    await store.deleteVideo('pose-v');
+    expect(await store.latestPoseReport('pose-v'),isNull);
+    expect(await store.plans(),hasLength(1));
+  });
+  test('poor-quality analysis cannot create a targeted training plan', () async {
+    await store.addVideo({'id':'pose-v','student_id':'s','title':'分析測試',
+      'path':'${dir.path}/none.mp4','duration_ms':1000,'created':now()});
+    final row=await store.savePoseReport('pose-v',analyzePoses(poseFixture(occluded:true),hand:'右手'));
+    await expectLater(store.createPosePlan(row['id'] as String),throwsStateError);
+    expect(await store.plans(),isEmpty);
+  });
+  test('version 1 database migration preserves students and coaching history', () async {
+    final oldPath='${dir.path}/old.db';
+    final old=await databaseFactoryFfi.openDatabase(oldPath,options:OpenDatabaseOptions(version:1,
+      onCreate:(db,version) async {
+        for(final sql in CoachStore.schema.where((sql)=>!CoachStore.poseSchema.contains(sql))) {await db.execute(sql);}
+        await db.insert('students',{'id':'old','name':'原有學員','age':10,'hand':'左手','experience':2,'notes':'保留','created':now()});
+      }));
+    await old.close();
+    final upgraded=await CoachStore.open(factory:databaseFactoryFfi,path:oldPath);
+    expect((await upgraded.students()).single['notes'],'保留');
+    expect(await upgraded.latestPoseReport('missing'),isNull);
+    expect(await upgraded.db.getVersion(),2);
+    await upgraded.close();
+  });
+
 }
