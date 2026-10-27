@@ -26,7 +26,7 @@ with tempfile.TemporaryDirectory(prefix='coach-install-') as directory:
     <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="35"/>
     <permission android:name="{old_id}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
     <uses-permission android:name="{old_id}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
-    <application android:label="Disposable legacy install fixture" android:debuggable="true"/>
+    <application android:label="Disposable legacy install fixture" android:debuggable="true" android:hasCode="false"/>
     </manifest>''')
     legacy = root / 'legacy.apk'
     run(bt / 'aapt', 'package', '-f', '-M', manifest, '-I', sdk / 'platforms/android-36/android.jar', '-F', legacy)
