@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:badminton_ai_coach/main.dart';
@@ -13,6 +14,7 @@ void main() {
   testWidgets('Android: local database, native indexed decoding, and coaching UI', (tester) async {
     final directory=await MediaBridge.directory();
     final clip=File('$directory/integration-fixture.mp4');await clip.writeAsBytes(base64Decode(fixtureBase64));
+    debugPrint('CHECK: native frame timeline');
     final info=await MediaBridge.info(clip.path);
     expect(info['precise'],isTrue);expect(info['times'],List.generate(10,(i)=>i*100));
     final first=await MediaBridge.frame(clip.path,index:0);
@@ -20,6 +22,7 @@ void main() {
     expect(first['index'],0);expect(second['position'],100);expect(second['width'],160);
     expect(base64Encode(first['bytes']),isNot(base64Encode(second['bytes'])));
     await expectLater(MediaBridge.frame(clip.path,index:10),throwsA(anything));
+    debugPrint('CHECK: database persistence');
     final dbPath='$directory/integration.db';
     var store=await CoachStore.open(path:dbPath);
     final sid=newId();
@@ -30,11 +33,13 @@ void main() {
     await store.logPractice(plan['id'] as String,['balance'],4,'改善');
     await store.close();store=await CoachStore.open(path:dbPath);
     expect((await store.practices(plan['id'] as String)).single['notes'],'改善');
+    debugPrint('CHECK: coaching navigation');
     await tester.pumpWidget(CoachApp(store:store,consented:true));await tester.pumpAndSettle();
     expect(find.text('今日，練好一個細節。'),findsOneWidget);
     await tester.tap(find.byIcon(Icons.people_outline));await tester.pumpAndSettle();
     await tester.tap(find.text('測試小羽'));await tester.pumpAndSettle();
     expect(find.text('新增高遠球評估'),findsOneWidget);
+    debugPrint('CHECK: playback and annotation');
     await tester.tap(find.text('影片及標記'));await tester.pumpAndSettle();
     await tester.tap(find.text('合成測試影片'));await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('逐格／截圖及畫線'));
@@ -49,9 +54,10 @@ void main() {
     final savedImage=File(snapshots.single['path'] as String);
     expect(await savedImage.exists(),isTrue);
     expect(jsonDecode(snapshots.single['strokes'] as String),isNotEmpty);
+    debugPrint('CHECK: deletion cleanup');
     await store.deleteStudent(sid);
     expect(await savedImage.exists(),isFalse);
     await tester.pumpWidget(const SizedBox.shrink());await tester.pumpAndSettle();
     await store.close();expect(await clip.exists(),isFalse);
-  });
+  },timeout:const Timeout(Duration(minutes:3)));
 }
