@@ -42,5 +42,5 @@ DB version 2 以 onUpgrade 新增 pose_reports(id, video_id, result JSON, plan_i
 - https://developers.google.com/ml-kit/vision/pose-detection/android
 - https://developers.google.com/ml-kit/vision/pose-detection
 - https://developers.google.com/ml-kit/terms
-- https://developers.google.com/ml-kit/terms/data-usage
+- https://developers.google.com/ml-kit/android-data-disclosure
 - 測試資產：https://storage.googleapis.com/mediapipe-assets/pose.jpg?generation=1678737494661975

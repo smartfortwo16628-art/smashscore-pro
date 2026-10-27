@@ -362,14 +362,14 @@ class HelpScreen extends StatelessWidget {
         ),
         SizedBox(height: 12),
         Text(
-          '本版沒有網絡權限，亦沒有分析追蹤、登入、廣告或雲端備份。匯入影片會複製到 App 私人儲存；刪除 App 會清除資料。刪除學員會連同其影片、截圖、評估及練習紀錄一併刪除。\n\n匯出標記圖片後，該副本由你自行保管，App 內刪除不會刪除已匯出副本。請使用手機螢幕鎖。',
+          '本版沒有網絡權限、登入、廣告或雲端備份。匯入影片會複製到 App 私人儲存；刪除 App 會清除資料。刪除學員會連同其影片、截圖、評估及練習紀錄一併刪除。\n\n匯出標記圖片後，該副本由你自行保管，App 內刪除不會刪除已匯出副本。請使用手機螢幕鎖。',
         ),
         SizedBox(height: 20),
         Text(
           '拍攝建議：固定手機，光線足夠，全身連雙腳入鏡。匯入上限 3 分鐘／300 MiB；MP4 H.264 通常較易播放。逐格功能只會在原生解碼器能提供可靠影格索引時啟用。',
         ),
         SizedBox(height: 20),
-        const Text('ML Kit 為 Google 專有裝置端 SDK，並非全開源；本版不需要付費 API。條款：https://developers.google.com/ml-kit/terms\n隱私說明：https://developers.google.com/ml-kit/terms/data-usage'),
+        const Text('ML Kit 為 Google 專有裝置端 SDK，並非全開源；本版不需要付費 API。SDK 本身設有效能／使用量診斷機制；呢個離線版移除網絡權限，沒有影片／結果上傳功能。條款：https://developers.google.com/ml-kit/terms\n隱私說明：https://developers.google.com/ml-kit/android-data-disclosure'),
         SizedBox(height: 12),
         const Text('Badminton AI Coach 1.2.0\nML Kit 人體姿態已啟用，模型隨 App 安裝；動作提示仍屬實驗性。沒有 GPT 或雲端服務。'),
         TextButton(

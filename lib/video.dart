@@ -108,8 +108,12 @@ class _VideosState extends State<VideosScreen> {
       }
       final path = media['path'] as String;
       final video = <String, Object?>{
-        'id': newId(), 'student_id': studentId, 'title': media['name'] as String,
-        'path': path, 'duration_ms': media['duration'] as int, 'created': now(),
+        'id': newId(),
+        'student_id': studentId,
+        'title': media['name'] as String,
+        'path': path,
+        'duration_ms': media['duration'] as int,
+        'created': now(),
       };
       try {
         await store.addVideo(video);
@@ -122,8 +126,11 @@ class _VideosState extends State<VideosScreen> {
         rethrow;
       }
       if (mounted) {
-        await Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) => PoseAnalysisScreen(video, autoStart: true)));
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => PoseAnalysisScreen(video, autoStart: true),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -159,7 +166,10 @@ class _VideosState extends State<VideosScreen> {
           future: StoreScope.of(c).videos(studentId: widget.studentId),
           builder: (rows) => rows.isEmpty
               ? const Center(
-                  child: EmptyPanel('匯入影片，自動睇動作', '本機辨識人體姿態、標示觀察時間，再配對改善練習；亦可慢放及手動畫線。'),
+                  child: EmptyPanel(
+                    '匯入影片，自動睇動作',
+                    '本機辨識人體姿態、標示觀察時間，再配對改善練習；亦可慢放及手動畫線。',
+                  ),
                 )
               : ListView(
                   padding: const EdgeInsets.all(16),
@@ -210,6 +220,7 @@ class _VideoState extends State<VideoScreen> with WidgetsBindingObserver {
       await controller.seekTo(Duration(milliseconds: widget.initialPosition));
     }
   }
+
   double speed = 1;
   bool operation = false;
   @override
@@ -390,10 +401,12 @@ class _VideoState extends State<VideoScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: operation ? null : () => perform(c, () async {
-                await controller.pause();
-                if (c.mounted) go(c, PoseAnalysisScreen(widget.video));
-              }),
+              onPressed: operation
+                  ? null
+                  : () => perform(c, () async {
+                      await controller.pause();
+                      if (c.mounted) go(c, PoseAnalysisScreen(widget.video));
+                    }),
               icon: const Icon(Icons.auto_awesome),
               label: const Text('自動分析／查看報告'),
             ),

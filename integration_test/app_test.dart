@@ -106,62 +106,109 @@ void main() {
           break;
         }
       }
-      expect(find.textContaining('儲存未完成：'), findsNothing,
-          reason: tester.widgetList<Text>(find.byType(Text))
-              .map((text) => text.data ?? '').join('\n'));
+      expect(
+        find.textContaining('儲存未完成：'),
+        findsNothing,
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((text) => text.data ?? '')
+            .join('\n'),
+      );
       expect(find.text('已儲存標記截圖'), findsOneWidget);
       final snapshots = await store.snapshots('fixture-video');
       expect(snapshots, hasLength(1));
       final savedImage = File(snapshots.single['path'] as String);
       expect(await savedImage.exists(), isTrue);
       expect(jsonDecode(snapshots.single['strokes'] as String), isNotEmpty);
-      debugPrint('CHECK: bundled ML Kit inference with mobile and Wi-Fi data disabled');
-      final poseClip=File('$directory/pose-still-person.mp4');
+      debugPrint(
+        'CHECK: bundled ML Kit inference with mobile and Wi-Fi data disabled',
+      );
+      final poseClip = File('$directory/pose-still-person.mp4');
       await poseClip.writeAsBytes(base64Decode(poseClipBase64));
-      final progressEvents=<Map<String,dynamic>>[];
-      final progressSubscription=PoseBridge.progress.listen(progressEvents.add);
-      final detected=await PoseBridge.analyze(poseClip.path,'real-model-test');
-      final poseReport=analyzePoses(detected,hand:'右手');
-      expect(poseReport.frames,hasLength(24));
-      expect(poseReport.frames.where((f)=>f.points.values.where((p)=>p.usable).length>=12).length,greaterThan(12));
-      expect(poseReport.swings,isEmpty,reason:'A held yoga pose must never invent badminton swings');
-      expect(poseReport.drillIds,isEmpty);
-      expect(progressEvents.last['done'],24);
-      await expectLater(PoseBridge.analyze('/sdcard/not-private.mp4','invalid-path'),throwsA(isA<PlatformException>()));
+      final progressEvents = <Map<String, dynamic>>[];
+      final progressSubscription = PoseBridge.progress.listen(
+        progressEvents.add,
+      );
+      final detected = await PoseBridge.analyze(
+        poseClip.path,
+        'real-model-test',
+      );
+      final poseReport = analyzePoses(detected, hand: '右手');
+      expect(poseReport.frames, hasLength(24));
+      expect(
+        poseReport.frames
+            .where((f) => f.points.values.where((p) => p.usable).length >= 12)
+            .length,
+        greaterThan(12),
+      );
+      expect(
+        poseReport.swings,
+        isEmpty,
+        reason: 'A held yoga pose must never invent badminton swings',
+      );
+      expect(poseReport.drillIds, isEmpty);
+      expect(progressEvents.last['done'], 24);
+      await expectLater(
+        PoseBridge.analyze('/sdcard/not-private.mp4', 'invalid-path'),
+        throwsA(isA<PlatformException>()),
+      );
       debugPrint('CHECK: native cancellation');
-      final begun=Completer<void>();
-      final cancellationListener=PoseBridge.progress.listen((p){
-        if(p['job']=='cancel-test' && !begun.isCompleted) begun.complete();
+      final begun = Completer<void>();
+      final cancellationListener = PoseBridge.progress.listen((p) {
+        if (p['job'] == 'cancel-test' && !begun.isCompleted) begun.complete();
       });
-      final cancelling=PoseBridge.analyze(poseClip.path,'cancel-test');
-      final cancellationExpectation=expectLater(cancelling,throwsA(isA<PlatformException>()));
-      await begun.future.timeout(const Duration(seconds:15));
+      final cancelling = PoseBridge.analyze(poseClip.path, 'cancel-test');
+      final cancellationExpectation = expectLater(
+        cancelling,
+        throwsA(isA<PlatformException>()),
+      );
+      await begun.future.timeout(const Duration(seconds: 15));
       await PoseBridge.cancel('cancel-test');
       await cancellationExpectation;
       await cancellationListener.cancel();
       await progressSubscription.cancel();
       debugPrint('CHECK: automatic report UI, persistence and body overlay');
-      final poseVideo=<String,Object?>{'id':'pose-video','student_id':sid,'title':'公開姿態測試片',
-        'path':poseClip.path,'duration_ms':3000,'created':now()};
+      final poseVideo = <String, Object?>{
+        'id': 'pose-video',
+        'student_id': sid,
+        'title': '公開姿態測試片',
+        'path': poseClip.path,
+        'duration_ms': 3000,
+        'created': now(),
+      };
       await store.addVideo(poseVideo);
-      await tester.pumpWidget(StoreScope(store:store,child:MaterialApp(home:PoseAnalysisScreen(poseVideo,autoStart:true))));
-      for(var i=0;i<900;i++) {
-        await tester.pump(const Duration(milliseconds:100));
-        if(find.text('今次未有足夠依據').evaluate().isNotEmpty) break;
-        if(find.text('分析未完成').evaluate().isNotEmpty) break;
+      await tester.pumpWidget(
+        StoreScope(
+          store: store,
+          child: MaterialApp(
+            home: PoseAnalysisScreen(poseVideo, autoStart: true),
+          ),
+        ),
+      );
+      for (var i = 0; i < 900; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        if (find.text('今次未有足夠依據').evaluate().isNotEmpty) break;
+        if (find.text('分析未完成').evaluate().isNotEmpty) break;
       }
-      expect(find.text('分析未完成'),findsNothing,reason:tester.widgetList<Text>(find.byType(Text)).map((t)=>t.data??'').join('\n'));
-      expect(find.text('今次未有足夠依據'),findsOneWidget);
-      expect(await store.latestPoseReport('pose-video'),isNotNull);
+      expect(
+        find.text('分析未完成'),
+        findsNothing,
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data ?? '')
+            .join('\n'),
+      );
+      expect(find.text('今次未有足夠依據'), findsOneWidget);
+      expect(await store.latestPoseReport('pose-video'), isNotNull);
       await tester.ensureVisible(find.text('查看骨架及影格'));
       await tester.tap(find.text('查看骨架及影格'));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('pose-overlay')),findsOneWidget);
+      expect(find.byKey(const Key('pose-overlay')), findsOneWidget);
       debugPrint('CHECK: deletion cleanup');
       await store.deleteStudent(sid);
       expect(await savedImage.exists(), isFalse);
-      expect(await poseClip.exists(),isFalse);
-      expect(await store.latestPoseReport('pose-video'),isNull);
+      expect(await poseClip.exists(), isFalse);
+      expect(await store.latestPoseReport('pose-video'), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
       await store.close();

@@ -68,40 +68,69 @@ class CoachStore extends ChangeNotifier {
     'CREATE INDEX pose_video ON pose_reports(video_id, created)',
   ];
   Future<DbRow?> latestPoseReport(String videoId) async {
-    final rows = await db.query('pose_reports', where: 'video_id = ?',
-      whereArgs: [videoId], orderBy: 'created DESC, rowid DESC', limit: 1);
+    final rows = await db.query(
+      'pose_reports',
+      where: 'video_id = ?',
+      whereArgs: [videoId],
+      orderBy: 'created DESC, rowid DESC',
+      limit: 1,
+    );
     return rows.isEmpty ? null : rows.first;
   }
+
   Future<DbRow> savePoseReport(String videoId, PoseReport report) async {
-    final row = <String, Object?>{'id': newId(), 'video_id': videoId,
-      'result': jsonEncode(report.toJson()), 'plan_id': null, 'created': now()};
+    final row = <String, Object?>{
+      'id': newId(),
+      'video_id': videoId,
+      'result': jsonEncode(report.toJson()),
+      'plan_id': null,
+      'created': now(),
+    };
     await db.transaction((tx) async {
       await tx.insert('pose_reports', row);
       // Bound storage while retaining the latest three analyses; existing practice plans survive.
-      await tx.rawDelete('DELETE FROM pose_reports WHERE video_id=? AND id NOT IN '
-        '(SELECT id FROM pose_reports WHERE video_id=? ORDER BY created DESC, rowid DESC LIMIT 3)', [videoId, videoId]);
+      await tx.rawDelete(
+        'DELETE FROM pose_reports WHERE video_id=? AND id NOT IN '
+        '(SELECT id FROM pose_reports WHERE video_id=? ORDER BY created DESC, rowid DESC LIMIT 3)',
+        [videoId, videoId],
+      );
     });
     notifyListeners();
     return row;
   }
+
   Future<String> createPosePlan(String reportId) async {
     final planId = await db.transaction((tx) async {
-      final rows = await tx.rawQuery('SELECT r.*, v.student_id FROM pose_reports r '
-        'JOIN videos v ON v.id=r.video_id WHERE r.id=?', [reportId]);
+      final rows = await tx.rawQuery(
+        'SELECT r.*, v.student_id FROM pose_reports r '
+        'JOIN videos v ON v.id=r.video_id WHERE r.id=?',
+        [reportId],
+      );
       if (rows.isEmpty) throw StateError('分析紀錄已不存在');
       final row = rows.first;
       if (row['plan_id'] != null) return row['plan_id'] as String;
       final report = PoseReport.fromJson(jsonDecode(row['result'] as String));
       if (report.drillIds.isEmpty) throw StateError('今次沒有足夠依據產生針對性練習');
       final id = newId();
-      await tx.insert('plans', {'id': id, 'student_id': row['student_id'],
-        'assessment_id': null, 'drill_ids': jsonEncode(report.drillIds), 'created': now()});
-      await tx.update('pose_reports', {'plan_id': id}, where: 'id=?', whereArgs: [reportId]);
+      await tx.insert('plans', {
+        'id': id,
+        'student_id': row['student_id'],
+        'assessment_id': null,
+        'drill_ids': jsonEncode(report.drillIds),
+        'created': now(),
+      });
+      await tx.update(
+        'pose_reports',
+        {'plan_id': id},
+        where: 'id=?',
+        whereArgs: [reportId],
+      );
       return id;
     });
     notifyListeners();
     return planId;
   }
+
   Future<bool> consented() async => (await db.query(
     'settings',
     where: 'key = ?',
