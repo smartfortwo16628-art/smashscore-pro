@@ -8,6 +8,8 @@ android/local.properties
 android/key.properties
 *.jks
 *.keystore
+*.p12
+signing-private/
 *.apk
 *.aab
 __pycache__/

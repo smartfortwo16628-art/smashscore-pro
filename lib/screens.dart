@@ -371,12 +371,12 @@ class HelpScreen extends StatelessWidget {
         SizedBox(height: 20),
         const Text('ML Kit 為 Google 專有裝置端 SDK，並非全開源；本版不需要付費 API。SDK 本身設有效能／使用量診斷機制；呢個離線版移除網絡權限，沒有影片／結果上傳功能。條款：https://developers.google.com/ml-kit/terms\n隱私說明：https://developers.google.com/ml-kit/android-data-disclosure'),
         SizedBox(height: 12),
-        const Text('Badminton AI Coach 1.2.0\nML Kit 人體姿態已啟用，模型隨 App 安裝；動作提示仍屬實驗性。沒有 GPT 或雲端服務。'),
+        const Text('羽毛球 AI 自動分析 1.2.1\nML Kit 人體姿態已啟用，模型隨 App 安裝；動作提示仍屬實驗性。沒有 GPT 或雲端服務。'),
         TextButton(
           onPressed: () => showLicensePage(
             context: c,
             applicationName: 'Badminton AI Coach',
-            applicationVersion: '1.2.0',
+            applicationVersion: '1.2.1',
           ),
           child: const Text('Flutter 及開源套件授權'),
         ),

@@ -11,6 +11,8 @@ jobs:
   build-and-test:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    env:
+      COACH_UNSIGNED_BUILD: ${{ secrets.COACH_ANDROID_SIGNING == '' && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -28,6 +30,10 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Android SDK
         run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;27.0.12077973'
+      - name: Prepare optional private signing
+        env:
+          COACH_ANDROID_SIGNING: ${{ secrets.COACH_ANDROID_SIGNING }}
+        run: python3 scripts/prepare_signing.py
       - name: Resolve, analyse, test and build
         run: |
           if ! command -v ffmpeg >/dev/null; then
@@ -38,13 +44,18 @@ jobs:
       - name: Package APK
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/Badminton_AI_Coach_AI.apk
+          if [ "$COACH_UNSIGNED_BUILD" = "1" ]; then
+            cp build/app/outputs/flutter-apk/app-release.apk dist/UNSIGNED_DO_NOT_INSTALL.apk
+          else
+            cp build/app/outputs/flutter-apk/app-release.apk dist/Badminton_AI_Coach_Auto_1.2.1.apk
+          fi
           cp build/apk-verification.txt dist/
           cp pubspec.lock dist/
-          sha256sum dist/Badminton_AI_Coach_AI.apk > dist/SHA256SUMS.txt
+          sha256sum dist/*.apk > dist/SHA256SUMS.txt
+          cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" dist/
       - uses: actions/upload-artifact@v4
         with:
-          name: Badminton-AI-Coach-AI-APK
+          name: Badminton-AI-Coach-1.2.1-build
           path: dist/
           retention-days: 7
           if-no-files-found: error
@@ -61,13 +72,14 @@ jobs:
           target: default
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -feature -Vulkan
-          script: bash scripts/emulator_test.sh
+          script: bash scripts/emulator_test.sh && python3 scripts/install_compatibility_test.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: validation-reports
           path: |
             build/apk-verification.txt
+            build/install-compatibility.txt
             pubspec.lock
             lib/
             test/

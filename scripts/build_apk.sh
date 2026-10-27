@@ -7,4 +7,8 @@ dart format lib test integration_test
 flutter analyze
 flutter test --reporter expanded
 flutter build apk --release
-python3 scripts/verify_apk.py build/app/outputs/flutter-apk/app-release.apk
+if [ "${COACH_UNSIGNED_BUILD:-0}" = "1" ]; then
+  python3 scripts/verify_apk.py build/app/outputs/flutter-apk/app-release.apk --unsigned
+else
+  python3 scripts/verify_apk.py build/app/outputs/flutter-apk/app-release.apk
+fi
