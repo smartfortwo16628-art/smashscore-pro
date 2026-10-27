@@ -1,0 +1,18 @@
+.dart_tool/
+.generated_host/
+.flutter-plugins*
+build/
+coverage/
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+*.p12
+signing-private/
+*.apk
+*.aab
+__pycache__/
+
+# Reproducible upstream inference fixture, generated before analysis/tests.
+integration_test/pose_clip.dart

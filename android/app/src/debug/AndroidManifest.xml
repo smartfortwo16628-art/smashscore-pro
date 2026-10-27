@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <!-- Development VM connection only; release verifier rejects network permissions. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="replace"/>
+    <application>
+        <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false"/>
+    </application>
+</manifest>
