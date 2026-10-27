@@ -12,7 +12,7 @@ String dateLabel(Object? value) {
 void message(BuildContext c,String text) { if(c.mounted) { ScaffoldMessenger.of(c).showSnackBar(SnackBar(content:Text(text))); } }
 Future<bool> perform(BuildContext c,Future<void> Function() operation) async {
   try { await operation(); return true; }
-  catch(e) { message(c,'未能完成：$e'); return false; }
+  catch(e) { if(c.mounted) { message(c,'未能完成：$e'); } return false; }
 }
 void go(BuildContext c,Widget page) => Navigator.of(c).push(MaterialPageRoute<void>(builder:(_)=>page));
 Future<bool> confirm(BuildContext c,String title,String detail)=>showDialog<bool>(context:c,builder:(ctx)=>AlertDialog(
@@ -124,7 +124,7 @@ class _StudentFormState extends State<StudentForm> {
     DropdownButtonFormField<String>(initialValue:hand,decoration:const InputDecoration(labelText:'慣用手'),items:['右手','左手'].map((v)=>DropdownMenuItem(value:v,child:Text(v))).toList(),onChanged:(v)=>setState(()=>hand=v??hand)),const SizedBox(height:16),
     TextFormField(controller:experience,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'學習經驗（整年；不足一年填 0）'),validator:(v){final n=int.tryParse(v??'');return n==null||n<0||n>(int.tryParse(age.text)??0)?'經驗不可超過年齡':null;}),const SizedBox(height:16),
     TextFormField(controller:notes,maxLength:500,maxLines:3,decoration:const InputDecoration(labelText:'教練備註（避免填寫敏感資料）')),const SizedBox(height:16),
-    FilledButton(onPressed:busy?null:() async {if(!form.currentState!.validate()){return;}final store=StoreScope.of(c);setState(()=>busy=true);final ok=await perform(c,()=>store.saveStudent({'id':widget.student?['id']??newId(),'name':name.text.trim(),'age':int.parse(age.text),'hand':hand,'experience':int.parse(experience.text),'notes':notes.text.trim(),'created':widget.student?['created']??now()}));if(!mounted){return;}if(ok){Navigator.pop(c);}else{setState(()=>busy=false);}},child:Text(busy?'儲存中…':'儲存學員')),
+    FilledButton(onPressed:busy?null:() async {if(!form.currentState!.validate()){return;}final store=StoreScope.of(c);setState(()=>busy=true);final ok=await perform(c,()=>store.saveStudent({'id':widget.student?['id']??newId(),'name':name.text.trim(),'age':int.parse(age.text),'hand':hand,'experience':int.parse(experience.text),'notes':notes.text.trim(),'created':widget.student?['created']??now()}));if(!mounted||!c.mounted){return;}if(ok){Navigator.pop(c);}else{setState(()=>busy=false);}},child:Text(busy?'儲存中…':'儲存學員')),
   ])));
 }
 class StudentDetail extends StatelessWidget {
@@ -156,7 +156,7 @@ class _AssessmentState extends State<AssessmentScreen> {
     Text('今次想改善嘅問題',style:Theme.of(c).textTheme.titleLarge),const Text('依序配對最多 3 個練習。由教練確認是否適合學員。'),
     ...drills.map((d)=>CheckboxListTile(contentPadding:EdgeInsets.zero,title:Text(d.issue),subtitle:Text(d.evidence),value:issues.contains(d.id),onChanged:busy?null:(v)=>setState(()=>v==true?issues.add(d.id):issues.remove(d.id)))),const SizedBox(height:16),
     TextFormField(controller:notes,maxLength:1000,maxLines:4,decoration:const InputDecoration(labelText:'觀察、拍攝角度及改善重點')),
-    const SizedBox(height:16),FilledButton(onPressed:busy?null:() async {final store=StoreScope.of(c);setState(()=>busy=true);final ok=await perform(c,()=>store.saveAssessment(studentId:widget.studentId,videoId:widget.videoId,ratings:scores,issues:issues.toList(),notes:notes.text.trim(),drillIds:planFor(issues).map((d)=>d.id).toList()));if(!mounted){return;}if(ok){message(c,issues.isEmpty?'已儲存觀察紀錄':'已儲存觀察及配對練習');Navigator.pop(c);}else{setState(()=>busy=false);}},child:Text(busy?'儲存中…':'儲存觀察及配對練習')),
+    const SizedBox(height:16),FilledButton(onPressed:busy?null:() async {final store=StoreScope.of(c);setState(()=>busy=true);final ok=await perform(c,()=>store.saveAssessment(studentId:widget.studentId,videoId:widget.videoId,ratings:scores,issues:issues.toList(),notes:notes.text.trim(),drillIds:planFor(issues).map((d)=>d.id).toList()));if(!mounted||!c.mounted){return;}if(ok){message(c,issues.isEmpty?'已儲存觀察紀錄':'已儲存觀察及配對練習');Navigator.pop(c);}else{setState(()=>busy=false);}},child:Text(busy?'儲存中…':'儲存觀察及配對練習')),
   ]));
 }
 class PlansScreen extends StatelessWidget {
@@ -174,7 +174,7 @@ class _PlanState extends State<PlanScreen> {
     const Text('每次專注一至三項',style:TextStyle(fontSize:23,fontWeight:FontWeight.bold)),const SizedBox(height:10),const Text('建議每週 2–3 次，每次約 5–10 分鐘，由成人按體力調整。先慢後快，疲倦或唔舒服就休息。'),const SizedBox(height:16),
     ...exercises.map((d)=>Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(d.title,style:Theme.of(c).textTheme.titleLarge),const SizedBox(height:10),Text('教練口令：${d.cue}',style:const TextStyle(fontWeight:FontWeight.bold,color:Color(0xff075f55))),const SizedBox(height:10),Text(d.practice),CheckboxListTile(contentPadding:EdgeInsets.zero,title:const Text('今次已完成'),value:completed.contains(d.id),onChanged:busy?null:(v)=>setState(()=>v==true?completed.add(d.id):completed.remove(d.id)))])))),const SizedBox(height:16),
     DropdownButtonFormField<int>(initialValue:effort,decoration:const InputDecoration(labelText:'學員覺得今次控制動作有幾順？'),items:List.generate(5,(i)=>DropdownMenuItem(value:i+1,child:Text('${i+1} / 5${i==0?'・仍然困難':i==4?'・相當順暢':''}'))),onChanged:busy?null:(v)=>setState(()=>effort=v??3)),const SizedBox(height:16),
-    TextFormField(controller:notes,maxLength:800,maxLines:3,decoration:const InputDecoration(labelText:'改善紀錄／下次重點')),FilledButton(onPressed:busy||completed.isEmpty?null:() async {setState(()=>busy=true);final ok=await perform(c,()=>store.logPractice(widget.plan['id'] as String,completed.toList(),effort,notes.text.trim()));if(!mounted){return;}setState((){busy=false;if(ok){completed.clear();notes.clear();}});if(ok){message(c,'已記錄今次練習');}},child:Text(busy?'儲存中…':'記錄今次練習')),const SizedBox(height:24),
+    TextFormField(controller:notes,maxLength:800,maxLines:3,decoration:const InputDecoration(labelText:'改善紀錄／下次重點')),FilledButton(onPressed:busy||completed.isEmpty?null:() async {setState(()=>busy=true);final ok=await perform(c,()=>store.logPractice(widget.plan['id'] as String,completed.toList(),effort,notes.text.trim()));if(!mounted||!c.mounted){return;}setState((){busy=false;if(ok){completed.clear();notes.clear();}});if(ok){message(c,'已記錄今次練習');}},child:Text(busy?'儲存中…':'記錄今次練習')),const SizedBox(height:24),
     Text('改善紀錄',style:Theme.of(c).textTheme.titleLarge),QueryList(future:store.practices(widget.plan['id'] as String),builder:(rows)=>Column(children:rows.map((r)=>Card(child:ListTile(title:Text('${dateLabel(r['created'])}・自評 ${r['effort']}/5'),subtitle:Text('完成 ${(jsonDecode(r['completed'] as String) as List).length} 項\n${r['notes']}')))).toList())),
   ]));}
 }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -126,7 +125,7 @@ class _FrameState extends State<FrameScreen> {
     if(error!=null) Padding(padding:const EdgeInsets.all(16),child:Column(children:[Text('影格未能讀取：$error'),TextButton(onPressed:()=>fetch(index),child:const Text('重試'))])),
     if(frame!=null&&!loading) ...[
       Text(index<0?'時間擷取（近似位置）；此影片不支援可靠逐格。':'第 ${index+1} / ${times.length} 格・${timeLabel((frame!['position'] as num).toInt())}',style:const TextStyle(fontWeight:FontWeight.bold)),const SizedBox(height:12),
-      AspectRatio(aspectRatio:(frame!['width'] as num)/(frame!['height'] as num),child:LayoutBuilder(builder:(ctx,box)=>RepaintBoundary(key:boundary,child:GestureDetector(
+      AspectRatio(aspectRatio:(frame!['width'] as num)/(frame!['height'] as num),child:LayoutBuilder(builder:(ctx,box)=>RepaintBoundary(key:boundary,child:GestureDetector(key:const Key('annotation-canvas'),
         onPanStart:saving?null:(d)=>setState((){current=[Offset((d.localPosition.dx/box.maxWidth).clamp(0,1),(d.localPosition.dy/box.maxHeight).clamp(0,1))];lines.add(current!);dirty=true;}),
         onPanUpdate:saving?null:(d)=>setState(()=>current?.add(Offset((d.localPosition.dx/box.maxWidth).clamp(0,1),(d.localPosition.dy/box.maxHeight).clamp(0,1)))),
         onPanEnd:saving?null:(_)=>setState(()=>current=null),
