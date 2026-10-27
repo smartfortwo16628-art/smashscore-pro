@@ -5,6 +5,7 @@ to the release APK. Pin the upstream content so test evidence is reproducible.
 """
 import base64
 import hashlib
+import shutil
 from pathlib import Path
 import subprocess
 import urllib.request
@@ -19,7 +20,11 @@ assert hashlib.sha256(image).hexdigest() == 'c8a830ed683c0276d713dd5aeda28f415f1
 source = scratch / 'pose.jpg'
 source.write_bytes(image)
 clip = scratch / 'pose.mp4'
-subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-loop', '1', '-i', str(source),
+encoder = shutil.which('ffmpeg')
+if encoder is None:
+    import imageio_ffmpeg
+    encoder = imageio_ffmpeg.get_ffmpeg_exe()
+subprocess.run([encoder, '-loglevel', 'error', '-y', '-loop', '1', '-i', str(source),
                 '-t', '3', '-r', '8', '-vf', 'scale=960:640', '-c:v', 'libx264',
                 '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(clip)], check=True)
 encoded = base64.b64encode(clip.read_bytes()).decode('ascii')
